@@ -24,6 +24,10 @@ const filePath = fileDirectory + '/' + fileName;
   if (mailAddress != null && password != null) {
     const browser = await puppeteer.launch({
       headless: false,
+      defaultViewport: {
+        width: 1024,
+        height: 768
+      },
       args: [
         // Required for Docker version of Puppeteer
         '--no-sandbox',
