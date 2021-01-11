@@ -22,8 +22,19 @@ const filePath = fileDirectory + '/' + fileName;
   const channel = process.env.SLACK_CHANNEL ?? 'general';
 
   if (mailAddress != null && password != null) {
-    const browser = await puppeteer.launch({ headless: false });
+    const browser = await puppeteer.launch({
+      headless: false,
+      args: [
+        // Required for Docker version of Puppeteer
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        // This will write shared memory files into /tmp instead of /dev/shm,
+        // because Docker’s default for /dev/shm is 64MB
+        '--disable-dev-shm-usage'
+      ]
+    });
     const page = await browser.newPage();
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36');
     await page.goto(baseUrl);
     await login(page, mailAddress, password);
     await page.waitForNavigation();
