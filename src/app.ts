@@ -1,24 +1,46 @@
+import { App } from "@slack/bolt";
+import dotenv from 'dotenv';
+import { createReadStream } from "fs";
 import puppeteer, { Page } from "puppeteer";
 
+dotenv.config()
+
+const slackApp = new App({
+  token: process.env.SLACK_BOT_TOKEN,
+  signingSecret: process.env.SLACK_SIGNING_SECRET
+});
+
+const baseUrl = 'https://moneyforward.com';
+const fileName = 'summaries.png';
+const fileDirectory = 'tmp';
+const filePath = fileDirectory + '/' + fileName;
+
 (async () => {
-  const mailAddress = process.env.MAIL_ADDRESS;
-  const password = process.env.PASSWORD;
-  const groupId = process.env.GROUP_ID ?? '0';
+  const mailAddress = process.env.MONEYFORWARD_MAIL_ADDRESS;
+  const password = process.env.MONEYFORWARD_PASSWORD;
+  const groupId = process.env.MONEYFORWARD_GROUP_ID ?? '0';
+  const channel = process.env.SLACK_CHANNEL ?? 'general';
 
   if (mailAddress != null && password != null) {
     const browser = await puppeteer.launch({ headless: false });
     const page = await browser.newPage();
-    await page.goto('https://moneyforward.com/');
+    await page.goto(baseUrl);
     await login(page, mailAddress, password);
     await page.waitForNavigation();
-    await page.goto('https://moneyforward.com/spending_summaries');
+    await page.goto(`${baseUrl}/spending_summaries`);
     await openSpendingSummaries(page, groupId);
     await page.waitForTimeout(2000); // FIXME: グラフが表示されるのを待つ
     await saveScreenShot(page);
     await browser.close;
+    await slackApp.client.files.upload({
+      token: process.env.SLACK_BOT_TOKEN,
+      filename: fileName,
+      file: createReadStream(filePath),
+      channels: channel
+    });
   } else {
-    if (mailAddress == undefined) console.error('Please set the environment variable MAIL_ADDRESS');
-    if (password === undefined) console.error('Please set the environment variable PASSWORD');
+    if (mailAddress == undefined) console.error('Please set the environment variable MONEYFORWARD_MAIL_ADDRESS');
+    if (password === undefined) console.error('Please set the environment variable MONEYFORWARD_PASSWORD');
   }
 
   async function login(page: Page, mailAddress: string, password: string) {
@@ -52,6 +74,6 @@ import puppeteer, { Page } from "puppeteer";
 
   async function saveScreenShot(page: Page) {
     const element = await page.$('#main-container');
-    await element?.screenshot({ path: 'summaries.png' })
+    await element?.screenshot({ path: filePath })
   }
 })();
