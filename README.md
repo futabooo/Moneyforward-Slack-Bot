@@ -1,4 +1,4 @@
-# Moneyforward-Slack-Notifier
+# Moneyforward-Slack-Bot
 
 MoneyForwardの予算タブのスクリーンショットを撮影してSlackに通知する
 

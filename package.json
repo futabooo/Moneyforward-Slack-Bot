@@ -1,5 +1,5 @@
 {
-  "name": "moneyforward-slack-notifier",
+  "name": "moneyforward-slack-bot",
   "version": "0.1.0",
   "description": "",
   "main": "dist/app.js",
