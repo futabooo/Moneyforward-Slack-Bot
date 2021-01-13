@@ -1,0 +1,13 @@
+version: "3"
+services:
+  app:
+    container_name: "moneyforward-slack-bot"
+    build:
+      dockerfile: Dockerfile
+      context: ./
+    volumes:
+      - ./:/usr/src/app
+    ports:
+      - "8080:8080"
+    tty: true
+    stdin_open: true

@@ -2,7 +2,6 @@ import { App } from "@slack/bolt";
 import dotenv from 'dotenv';
 import { createReadStream } from "fs";
 import puppeteer, { Page } from "puppeteer";
-import { SecretManagerServiceClient } from "@google-cloud/secret-manager";
 
 dotenv.config()
 
@@ -11,28 +10,10 @@ const fileName = 'summaries.png';
 const fileDirectory = 'tmp';
 const filePath = fileDirectory + '/' + fileName;
 
-/**
- * Returns the secret string from Google Cloud Secret Manager
- * @param {string} name The name of the secret.
- * @return {string} The string value of the secret.
- */
-async function accessSecretVersion(name: string) {
-  const client = new SecretManagerServiceClient({ keyFilename: 'credentials.json' });
-  const projectId = process.env.PROJECT_ID;
-  const [version] = await client.accessSecretVersion({
-    name: `projects/${projectId}/secrets/${name}/versions/latest`
-  });
-
-  // Extract the payload as a string.
-  const payload = version.payload?.data?.toString();
-
-  return payload
-}
-
 async function init() {
   const slackApp = new App({
-    token: await accessSecretVersion('slack-bot-token'),
-    signingSecret: await accessSecretVersion('slack-signing-secret')
+    token: process.env.SLACK_BOT_TOKEN,
+    signingSecret: process.env.SLACK_SIGNING_SECRET
   });
 
   slackApp.message('ping', async ({ say }) => {
@@ -57,7 +38,6 @@ async function summaries() {
   const mailAddress = process.env.MONEYFORWARD_MAIL_ADDRESS;
   const password = process.env.MONEYFORWARD_PASSWORD;
   const groupId = process.env.MONEYFORWARD_GROUP_ID ?? '0';
-  const channel = process.env.SLACK_CHANNEL ?? 'general';
 
   if (mailAddress != null && password != null) {
     const browser = await puppeteer.launch({

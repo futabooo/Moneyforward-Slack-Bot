@@ -1,5 +1,5 @@
 steps:
 - name: 'gcr.io/cloud-builders/docker'
-  args: [ 'build', '-t', 'us-central1-docker.pkg.dev/$PROJECT_ID/moneyforward-slack-bot/moneyforward-slack-bot-image:tag1', '.' ]
+  args: [ 'build', '-t', 'us-central1-docker.pkg.dev/$PROJECT_ID/moneyforward-slack-bot/moneyforward-slack-bot-image:latest', '.' ]
 images:
-- 'us-central1-docker.pkg.dev/$PROJECT_ID/moneyforward-slack-bot/moneyforward-slack-bot-image:tag1'
+- 'us-central1-docker.pkg.dev/$PROJECT_ID/moneyforward-slack-bot/moneyforward-slack-bot-image:latest'
