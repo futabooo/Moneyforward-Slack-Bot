@@ -2,6 +2,7 @@ import { App } from "@slack/bolt";
 import dotenv from 'dotenv';
 import { createReadStream } from "fs";
 import puppeteer, { Page } from "puppeteer";
+import { SecretManagerServiceClient } from "@google-cloud/secret-manager";
 
 dotenv.config()
 
@@ -10,10 +11,42 @@ const fileName = 'summaries.png';
 const fileDirectory = 'tmp';
 const filePath = fileDirectory + '/' + fileName;
 
+var mailAddress: string;
+var password: string;
+var groupId: string;
+
+/**
+* Returns the secret string from Google Cloud Secret Manager
+* @param {string} name The name of the secret.
+* @return {payload} The string value of the secret.
+*/
+async function accessSecretVersion(name: string) {
+  const client = new SecretManagerServiceClient();
+  const projectId = process.env.PROJECT_ID;
+  const [version] = await client.accessSecretVersion({
+    name: `projects/${projectId}/secrets/${name}/versions/1`,
+  });
+  // Extract the payload as a string.
+  const payload = version.payload?.data?.toString();
+  return payload;
+}
+
 async function init() {
+  // FIXME: 型をいい感じにしたい
+  const m = process.env.MONEYFORWARD_MAIL_ADDRESS || await accessSecretVersion('moneyforward-mail-address');
+  const p = process.env.MONEYFORWARD_PASSWORD || await accessSecretVersion('moneyforward-password');
+  groupId = (process.env.MONEYFORWARD_GROUP_ID || await accessSecretVersion('moneyforward-group-id')) ?? '0';
+  if (m == null || p == null) {
+    if (m === undefined) console.error('Please set the environment variable MONEYFORWARD_MAIL_ADDRESS');
+    if (p === undefined) console.error('Please set the environment variable MONEYFORWARD_PASSWORD');
+    return;
+  }
+  mailAddress = m as string;
+  password = m as string;
+
   const slackApp = new App({
-    token: process.env.SLACK_BOT_TOKEN,
-    signingSecret: process.env.SLACK_SIGNING_SECRET
+    token: process.env.SLACK_BOT_TOKEN || await accessSecretVersion('slack-bot-token'),
+    signingSecret: process.env.SLACK_SIGNING_SECRET || await accessSecretVersion('slack-signing-secret')
   });
 
   slackApp.message('ping', async ({ say }) => {
@@ -35,40 +68,31 @@ async function init() {
 }
 
 async function summaries() {
-  const mailAddress = process.env.MONEYFORWARD_MAIL_ADDRESS;
-  const password = process.env.MONEYFORWARD_PASSWORD;
-  const groupId = process.env.MONEYFORWARD_GROUP_ID ?? '0';
-
-  if (mailAddress != null && password != null) {
-    const browser = await puppeteer.launch({
-      headless: true,
-      defaultViewport: {
-        width: 1024,
-        height: 768
-      },
-      args: [
-        // Required for Docker version of Puppeteer
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        // This will write shared memory files into /tmp instead of /dev/shm,
-        // because Docker’s default for /dev/shm is 64MB
-        '--disable-dev-shm-usage'
-      ]
-    });
-    const page = await browser.newPage();
-    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36');
-    await page.goto(baseUrl);
-    await login(page, mailAddress, password);
-    await page.waitForNavigation();
-    await page.goto(`${baseUrl}/spending_summaries`);
-    await openSummaries(page, groupId);
-    await page.waitForTimeout(2000); // FIXME: グラフが表示されるのを待つ
-    await saveSummariesImage(page);
-    await browser.close;
-  } else {
-    if (mailAddress == undefined) console.error('Please set the environment variable MONEYFORWARD_MAIL_ADDRESS');
-    if (password === undefined) console.error('Please set the environment variable MONEYFORWARD_PASSWORD');
-  }
+  const browser = await puppeteer.launch({
+    headless: true,
+    defaultViewport: {
+      width: 1024,
+      height: 768
+    },
+    args: [
+      // Required for Docker version of Puppeteer
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      // This will write shared memory files into /tmp instead of /dev/shm,
+      // because Docker’s default for /dev/shm is 64MB
+      '--disable-dev-shm-usage'
+    ]
+  });
+  const page = await browser.newPage();
+  await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36');
+  await page.goto(baseUrl);
+  await login(page, mailAddress, password);
+  await page.waitForNavigation();
+  await page.goto(`${baseUrl}/spending_summaries`);
+  await openSummaries(page, groupId);
+  await page.waitForTimeout(2000); // FIXME: グラフが表示されるのを待つ
+  await saveSummariesImage(page);
+  await browser.close;
 }
 
 async function login(page: Page, mailAddress: string, password: string) {
