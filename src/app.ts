@@ -42,7 +42,7 @@ async function init() {
     return;
   }
   mailAddress = m as string;
-  password = m as string;
+  password = p as string;
 
   const slackApp = new App({
     token: process.env.SLACK_BOT_TOKEN || await accessSecretVersion('slack-bot-token'),
@@ -50,12 +50,14 @@ async function init() {
   });
 
   slackApp.message('ping', async ({ say }) => {
-    say('png')
+    console.log("[receive] ping");
+    say('pong')
   });
 
   slackApp.message('サマリーくれ', async ({ message, context }) => {
+    console.log("[receive] サマリーくれ");
     await summaries();
-    const result = await slackApp.client.files.upload({
+    await slackApp.client.files.upload({
       token: context.botToken,
       channels: message.channel,
       filename: fileName,
@@ -69,7 +71,7 @@ async function init() {
 
 async function summaries() {
   const browser = await puppeteer.launch({
-    headless: true,
+    headless: false,
     defaultViewport: {
       width: 1024,
       height: 768
@@ -85,10 +87,10 @@ async function summaries() {
   });
   const page = await browser.newPage();
   await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36');
-  await page.goto(baseUrl);
+
   await login(page, mailAddress, password);
   await page.waitForNavigation();
-  await page.goto(`${baseUrl}/spending_summaries`);
+
   await openSummaries(page, groupId);
   await page.waitForTimeout(2000); // FIXME: グラフが表示されるのを待つ
   await saveSummariesImage(page);
@@ -96,6 +98,8 @@ async function summaries() {
 }
 
 async function login(page: Page, mailAddress: string, password: string) {
+  await page.goto(baseUrl);
+
   await Promise.all([
     page.waitForNavigation(),
     page.click('.web-sign-in a'),
@@ -120,6 +124,7 @@ async function login(page: Page, mailAddress: string, password: string) {
 }
 
 async function openSummaries(page: Page, groupId: string) {
+  await page.goto(`${baseUrl}/spending_summaries`);
   await page.waitForSelector('#page-spending-summaries');
   await page.select('select#group_id_hash', groupId)
 }
