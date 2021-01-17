@@ -1,13 +1,17 @@
 version: "3"
 services:
   app:
-    container_name: "moneyforward-slack-bot"
     build:
       dockerfile: Dockerfile
       context: ./
+    image: moneyforward-slack-bot:latest
+    environment:
+      - SLACK_SIGNING_SECRET
+      - SLACK_BOT_TOKEN
+      - MONEYFORWARD_MAIL_ADDRESS
+      - MONEYFORWARD_PASSWORD
+      - MONEYFORWARD_GROUP_DI
     volumes:
       - ./:/usr/src/app
     ports:
-      - "8080:8080"
-    tty: true
-    stdin_open: true
+      - "3000:3000"

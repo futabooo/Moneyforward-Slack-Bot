@@ -44,7 +44,9 @@ async function init() {
 
   const slackApp = new App({
     token: process.env.SLACK_BOT_TOKEN || await accessSecretVersion('slack-bot-token'),
-    signingSecret: process.env.SLACK_SIGNING_SECRET || await accessSecretVersion('slack-signing-secret')
+    signingSecret: process.env.SLACK_SIGNING_SECRET || await accessSecretVersion('slack-signing-secret'),
+    logLevel: LogLevel.DEBUG,
+    processBeforeResponse: true,
   });
 
   slackApp.message('ping', async ({ say }) => {
@@ -52,13 +54,30 @@ async function init() {
     say('pong')
   });
 
-  slackApp.message('サマリーくれ', async ({ message, context}) => {
+  slackApp.message('サマリーくれ', async ({ message, context, say }) => {
     console.log("[receive] サマリーくれ");
+    say('サマリー取得中');
     try {
       const image = await summariesImage();
       await slackApp.client.files.upload({
         token: context.botToken,
         channels: message.channel,
+        file: image,
+      });
+    } catch (err) {
+      console.log(err)
+    }
+  });
+
+  slackApp.command('/moneyforward', async ({ command, ack, say }) => {
+    console.log("[receive] サマリーくれ with slach command");
+    await ack();
+    say('サマリー取得中');
+    try {
+      const image = await summariesImage();
+      await slackApp.client.files.upload({
+        token: command.botToken,
+        channels: command.channel_id,
         file: image,
       });
     } catch (err) {
@@ -73,6 +92,7 @@ async function init() {
 async function summariesImage(): Promise<Buffer | undefined> {
   const browser = await puppeteer.launch({
     headless: true,
+    executablePath: 'google-chrome-stable',
     defaultViewport: {
       width: 1024,
       height: 768
