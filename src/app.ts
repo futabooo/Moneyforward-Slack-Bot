@@ -1,15 +1,13 @@
-import { App } from "@slack/bolt";
-import dotenv from 'dotenv';
-import { createReadStream } from "fs";
-import puppeteer, { Page } from "puppeteer";
 import { SecretManagerServiceClient } from "@google-cloud/secret-manager";
+import { App, LogLevel } from "@slack/bolt";
+import dotenv from 'dotenv';
+import puppeteer, { Page } from "puppeteer";
 
 dotenv.config()
 
 const baseUrl = 'https://moneyforward.com';
 const fileName = 'summaries.png';
 const fileDirectory = 'tmp';
-const filePath = fileDirectory + '/' + fileName;
 
 var mailAddress: string;
 var password: string;
@@ -54,24 +52,27 @@ async function init() {
     say('pong')
   });
 
-  slackApp.message('サマリーくれ', async ({ message, context }) => {
+  slackApp.message('サマリーくれ', async ({ message, context}) => {
     console.log("[receive] サマリーくれ");
-    await summaries();
-    await slackApp.client.files.upload({
-      token: context.botToken,
-      channels: message.channel,
-      filename: fileName,
-      file: createReadStream(filePath),
-    });
+    try {
+      const image = await summariesImage();
+      await slackApp.client.files.upload({
+        token: context.botToken,
+        channels: message.channel,
+        file: image,
+      });
+    } catch (err) {
+      console.log(err)
+    }
   });
 
   await slackApp.start(process.env.PORT || 3000);
   console.log("⚡️ Bolt app is running!");
 }
 
-async function summaries() {
+async function summariesImage(): Promise<Buffer | undefined> {
   const browser = await puppeteer.launch({
-    headless: false,
+    headless: true,
     defaultViewport: {
       width: 1024,
       height: 768
@@ -87,24 +88,18 @@ async function summaries() {
   });
   const page = await browser.newPage();
   await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36');
-
+  await openLogin(page);
   await login(page, mailAddress, password);
   await page.waitForNavigation();
-
   await openSummaries(page, groupId);
   await page.waitForTimeout(2000); // FIXME: グラフが表示されるのを待つ
-  await saveSummariesImage(page);
+  const element = await page.$('#main-container');
+  const imageBuffer = await element?.screenshot({ encoding: 'binary' });
   await browser.close;
+  return imageBuffer;
 }
 
 async function login(page: Page, mailAddress: string, password: string) {
-  await page.goto(baseUrl);
-
-  await Promise.all([
-    page.waitForNavigation(),
-    page.click('.web-sign-in a'),
-  ]);
-
   await Promise.all([
     page.waitForNavigation(),
     page.click('.buttonWrapper .blockContent a'),
@@ -123,15 +118,18 @@ async function login(page: Page, mailAddress: string, password: string) {
   await page.click('input[type="submit"]');
 }
 
+async function openLogin(page: Page) {
+  await page.goto(baseUrl);
+  await Promise.all([
+    page.waitForNavigation(),
+    page.click('.web-sign-in a'),
+  ]);
+}
+
 async function openSummaries(page: Page, groupId: string) {
   await page.goto(`${baseUrl}/spending_summaries`);
   await page.waitForSelector('#page-spending-summaries');
   await page.select('select#group_id_hash', groupId)
-}
-
-async function saveSummariesImage(page: Page) {
-  const element = await page.$('#main-container');
-  await element?.screenshot({ path: filePath })
 }
 
 (async () => {
