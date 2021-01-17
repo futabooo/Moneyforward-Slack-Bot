@@ -6,8 +6,6 @@ import puppeteer, { Page } from "puppeteer";
 dotenv.config()
 
 const baseUrl = 'https://moneyforward.com';
-const fileName = 'summaries.png';
-const fileDirectory = 'tmp';
 
 var mailAddress: string;
 var password: string;
