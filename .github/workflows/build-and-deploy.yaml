@@ -1,0 +1,46 @@
+name: Docker build & deploy
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT }}
+  SERVICE: moneyforward-slack-bot
+  REGION: us-central1
+  REPOSITORY: moneyforward-slack-bot
+  IMAGE: moneyforward-slack-bot-image
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Setup Cloud SDK
+      uses: google-github-actions/setup-gcloud@v0.2.0
+      with:
+        project_id: ${{ env.PROJECT_ID }}
+        service_account_key: ${{ secrets.GCP_SA_KEY }}
+        export_default_credentials: true  # Set to true to authenticate the Cloud Run action
+
+    - name: Authorize Docker push
+      run: gcloud auth configure-docker
+
+    - name: Build and Push Artifact Registry
+      run: |-
+        gcloud builds submit --config=cloudbuild.yaml \
+          --substitutions=_REPOSITORY="${{ env.REPOSITORY }}",_IMAGE="${{ env.IMAGE }}" .
+        
+    - name: Deploy to Cloud Run
+      id: deploy
+      run: |-
+        gcloud run deploy ${{ env.SERVICE }} \
+          --image ${{env.REGION}}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }} \
+          --platform managed \
+          --region ${{env.REGION}} \
+          --allow-unauthenticated \
+          --memory 512Mi \
+          --set-env-vars PROJECT_ID=${{ env.PROJECT_ID }}
