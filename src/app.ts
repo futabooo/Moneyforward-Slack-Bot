@@ -101,7 +101,13 @@ async function summariesImage(): Promise<Buffer | undefined> {
       '--disable-setuid-sandbox',
       // This will write shared memory files into /tmp instead of /dev/shm,
       // because Docker’s default for /dev/shm is 64MB
-      '--disable-dev-shm-usage'
+      '--disable-dev-shm-usage',
+      // improves a little the speed
+      // https://github.com/puppeteer/puppeteer/issues/3120#issuecomment-415553869
+      '--disable-gpu',
+      '--no-first-run',
+      '--no-zygote',
+      '--single-process',
     ]
   });
   const page = await browser.newPage();
