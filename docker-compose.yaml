@@ -5,12 +5,8 @@ services:
       dockerfile: Dockerfile
       context: ./
     image: moneyforward-slack-bot:latest
-    environment:
-      - SLACK_SIGNING_SECRET
-      - SLACK_BOT_TOKEN
-      - MONEYFORWARD_MAIL_ADDRESS
-      - MONEYFORWARD_PASSWORD
-      - MONEYFORWARD_GROUP_DI
+    env_file:
+      - .env
     volumes:
       - ./:/usr/src/app
     ports:
