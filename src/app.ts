@@ -1,8 +1,5 @@
 import { App, LogLevel } from "@slack/bolt";
-import dotenv from 'dotenv';
 import puppeteer, { Page } from "puppeteer";
-
-dotenv.config()
 
 const baseUrl = 'https://moneyforward.com';
 
