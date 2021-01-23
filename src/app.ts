@@ -3,53 +3,43 @@ import puppeteer, { Page } from "puppeteer";
 
 const baseUrl = 'https://moneyforward.com';
 
-var mailAddress: string;
-var password: string;
-var groupId: string;
+const mailAddress = process.env.MONEYFORWARD_MAIL_ADDRESS;
+const password = process.env.MONEYFORWARD_PASSWORD;
+const groupId = process.env.MONEYFORWARD_GROUP_ID ?? '0';
 
-async function init() {
-  // FIXME: 型をいい感じにしたい
-  const m = process.env.MONEYFORWARD_MAIL_ADDRESS;
-  const p = process.env.MONEYFORWARD_PASSWORD;
-  groupId = process.env.MONEYFORWARD_GROUP_ID ?? '0';
-  if (m == null || p == null) {
-    if (m === undefined) console.error('Please set the environment variable MONEYFORWARD_MAIL_ADDRESS');
-    if (p === undefined) console.error('Please set the environment variable MONEYFORWARD_PASSWORD');
-    return;
-  }
-  mailAddress = m as string;
-  password = p as string;
+const slackApp = new App({
+  token: process.env.SLACK_BOT_TOKEN,
+  signingSecret: process.env.SLACK_SIGNING_SECRET,
+  logLevel: LogLevel.DEBUG,
+  processBeforeResponse: true,
+});
 
-  const slackApp = new App({
-    token: process.env.SLACK_BOT_TOKEN,
-    signingSecret: process.env.SLACK_SIGNING_SECRET,
-    logLevel: LogLevel.DEBUG,
-    processBeforeResponse: true,
-  });
-
-  slackApp.message('ping', async ({ say }) => {
-    console.log("[receive] ping");
-    say('pong')
-  });
-
-  slackApp.command('/moneyforward', async ({ command, ack, context }) => {
-    console.log("[receive] サマリーくれ with slach command");
-    await ack();
-    try {
-      const image = await summariesImage();
-      await slackApp.client.files.upload({
-        token: context.botToken,
-        channels: command.channel_id,
-        file: image,
-      });
-    } catch (err) {
-      console.log(err)
-    }
-  });
-
+(async () => {
   await slackApp.start(process.env.PORT || 3000);
   console.log("⚡️ Bolt app is running!");
-}
+})();
+
+slackApp.message('ping', async ({ say }) => {
+  console.log("[receive] ping");
+  say('pong')
+});
+
+slackApp.command('/moneyforward', async ({ command, ack, context }) => {
+  console.log("[receive] サマリーくれ with slach command");
+  await ack();
+
+  // 3秒以上かかるのでSlackにエラーが表示されたあと画像が返ってくる
+  try {
+    const image = await summariesImage();
+    await slackApp.client.files.upload({
+      token: context.botToken,
+      channels: command.channel_id,
+      file: image,
+    });
+  } catch (err) {
+    console.log(err)
+  }
+});
 
 async function summariesImage(): Promise<Buffer | undefined> {
   const browser = await puppeteer.launch({
@@ -119,7 +109,3 @@ async function openSummaries(page: Page, groupId: string) {
   await page.waitForSelector('#page-spending-summaries');
   await page.select('select#group_id_hash', groupId)
 }
-
-(async () => {
-  init();
-})();
