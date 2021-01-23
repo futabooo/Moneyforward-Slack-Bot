@@ -1,4 +1,3 @@
-import { SecretManagerServiceClient } from "@google-cloud/secret-manager";
 import { App, LogLevel } from "@slack/bolt";
 import dotenv from 'dotenv';
 import puppeteer, { Page } from "puppeteer";
@@ -11,27 +10,11 @@ var mailAddress: string;
 var password: string;
 var groupId: string;
 
-/**
-* Returns the secret string from Google Cloud Secret Manager
-* @param {string} name The name of the secret.
-* @return {payload} The string value of the secret.
-*/
-async function accessSecretVersion(name: string) {
-  const client = new SecretManagerServiceClient();
-  const projectId = process.env.PROJECT_ID;
-  const [version] = await client.accessSecretVersion({
-    name: `projects/${projectId}/secrets/${name}/versions/1`,
-  });
-  // Extract the payload as a string.
-  const payload = version.payload?.data?.toString();
-  return payload;
-}
-
 async function init() {
   // FIXME: 型をいい感じにしたい
-  const m = process.env.MONEYFORWARD_MAIL_ADDRESS || await accessSecretVersion('moneyforward-mail-address');
-  const p = process.env.MONEYFORWARD_PASSWORD || await accessSecretVersion('moneyforward-password');
-  groupId = (process.env.MONEYFORWARD_GROUP_ID || await accessSecretVersion('moneyforward-group-id')) ?? '0';
+  const m = process.env.MONEYFORWARD_MAIL_ADDRESS;
+  const p = process.env.MONEYFORWARD_PASSWORD;
+  groupId = process.env.MONEYFORWARD_GROUP_ID ?? '0';
   if (m == null || p == null) {
     if (m === undefined) console.error('Please set the environment variable MONEYFORWARD_MAIL_ADDRESS');
     if (p === undefined) console.error('Please set the environment variable MONEYFORWARD_PASSWORD');
@@ -41,8 +24,8 @@ async function init() {
   password = p as string;
 
   const slackApp = new App({
-    token: process.env.SLACK_BOT_TOKEN || await accessSecretVersion('slack-bot-token'),
-    signingSecret: process.env.SLACK_SIGNING_SECRET || await accessSecretVersion('slack-signing-secret'),
+    token: process.env.SLACK_BOT_TOKEN,
+    signingSecret: process.env.SLACK_SIGNING_SECRET,
     logLevel: LogLevel.DEBUG,
     processBeforeResponse: true,
   });
