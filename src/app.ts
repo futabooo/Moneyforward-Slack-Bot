@@ -32,29 +32,13 @@ async function init() {
     say('pong')
   });
 
-  slackApp.message('サマリーくれ', async ({ message, context, say }) => {
-    console.log("[receive] サマリーくれ");
-    say('サマリー取得中');
+  slackApp.command('/moneyforward', async ({ command, ack, context }) => {
+    console.log("[receive] サマリーくれ with slach command");
+    await ack();
     try {
       const image = await summariesImage();
       await slackApp.client.files.upload({
         token: context.botToken,
-        channels: message.channel,
-        file: image,
-      });
-    } catch (err) {
-      console.log(err)
-    }
-  });
-
-  slackApp.command('/moneyforward', async ({ command, ack, say }) => {
-    console.log("[receive] サマリーくれ with slach command");
-    await ack();
-    say('サマリー取得中');
-    try {
-      const image = await summariesImage();
-      await slackApp.client.files.upload({
-        token: command.botToken,
         channels: command.channel_id,
         file: image,
       });
