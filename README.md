@@ -2,26 +2,63 @@
 
 MoneyForwardの予算タブのスクリーンショットを撮影してSlackに通知する
 
-<img width="640" src="https://user-images.githubusercontent.com/944185/104848123-df01d280-5926-11eb-8ae2-6be60ca3e722.png">
+<img width="640" src="https://user-images.githubusercontent.com/944185/105710364-5bfdff00-5f5a-11eb-8520-8d4d13b806ee.png">
 
-# Usage
-## ローカル環境
+## How to run this app
 
-## Cloud Run
+### Create a Slack App
 
-1. .env.templateを参考に.envを作成して必要な項目を埋める
+https://api.slack.com/apps
 
-```.env
-SLACK_SIGNING_SECRET=
-SLACK_BOT_TOKEN=
+* Features > OAuth & Permissions:
+  * Scopes:
+    * "bot"
+    * "commands"
+    * "files:write:user"
+  * Click "Save Changes"
+* Features > Slash Commands:
+  * Click "Create New Command"
+    * Command
+      * Set `/moneyforward`
+    * Request URL
+      * Set `{your cloud run url}/slack/events`
+    * Short Description
+      * Set something helpful for users
+    * Click "Save"
+* Features > Bot User:
+  * Click "Add a Bot User"
+  * Click "Add Bot User"
+* Settings > Install App:
+  * Complete "Install App"
 
-MONEYFORWARD_MAIL_ADDRESS=
-MONEYFORWARD_PASSWORD=
-MONEYFORWARD_GROUP_ID=
+### Run the app on your local machine
+
+```
+$ cp .env.template .
 ```
 
-2. dockerで動かす
 ```
-$ docker build -t  moneyforward-slack-notifier .
-$ docker run moneyforward-slack-notifier
+SLACK_SIGNING_SECRET=xxxxxxxxx
+SLACK_BOT_TOKEN=xoxb-xxxxxxxxx
+
+MONEYFORWARD_MAIL_ADDRESS=xxxxxxxxx
+MONEYFORWARD_PASSWORD=xxxxxxxxx
+MONEYFORWARD_GROUP_ID=xxxxxxxxx
 ```
+
+```
+$ npm build
+$ docker-compose build
+$ docker-compose up
+
+# on another terminal window
+# https://ngrok.com/
+$ ngrok http 3000
+```
+
+change Slack App Request URL
+https://{random string}.ngrok.io/slack/events
+
+
+### Deploy the app onto Google Clour Run
+See [Moneyforward-Slack_bot/.github/workflows/build-and-deploy.yaml](https://github.com/futabooo/Moneyforward-Slack-Bot/blob/main/.github/workflows/build-and-deploy.yaml)
