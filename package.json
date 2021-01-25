@@ -1,7 +1,7 @@
 {
   "name": "moneyforward-slack-bot",
   "version": "0.1.0",
-  "description": "",
+  "description": "Slack Bolt App for Moneyforward",
   "main": "dist/app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -11,9 +11,17 @@
     "dev": "ts-node src/app.ts",
     "start": "node ./dist/app.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "Slack",
+    "Bolt",
+    "Cloud Run"
+  ],
+  "author": "@futabooo",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/futabooo/Moneyforward-Slack-Bot/issues"
+  },
+  "homepage": "https://github.com/futabooo/Moneyforward-Slack-Bot",
   "devDependencies": {
     "@types/node": "^14.14.20",
     "@types/puppeteer": "^5.4.2",
