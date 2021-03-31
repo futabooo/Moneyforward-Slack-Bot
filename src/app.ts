@@ -69,7 +69,7 @@ async function summariesImage(): Promise<Buffer | undefined> {
   await openLogin(page);
   await login(page, mailAddress, password);
   await page.waitForNavigation();
-  await openSummaries(page, groupId);
+  await openSpendingSummaries(page, groupId);
   await page.waitForTimeout(2000); // FIXME: グラフが表示されるのを待つ
   const element = await page.$('#main-container');
   const imageBuffer = await element?.screenshot({ encoding: 'binary' });
@@ -104,7 +104,7 @@ async function openLogin(page: Page) {
   ]);
 }
 
-async function openSummaries(page: Page, groupId: string) {
+async function openSpendingSummaries(page: Page, groupId: string) {
   await page.goto(`${baseUrl}/spending_summaries`);
   await page.waitForSelector('#page-spending-summaries');
   await page.select('select#group_id_hash', groupId)
