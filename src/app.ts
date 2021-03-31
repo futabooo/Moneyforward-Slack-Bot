@@ -1,5 +1,5 @@
 import { App, LogLevel } from "@slack/bolt";
-import puppeteer, { Page } from "puppeteer";
+import puppeteer, { Browser, Page } from "puppeteer";
 
 const baseUrl = 'https://moneyforward.com';
 
@@ -42,7 +42,22 @@ slackApp.command('/moneyforward', async ({ command, ack, context }) => {
 });
 
 async function SpendingSummariesImage(): Promise<Buffer | undefined> {
-  const browser = await puppeteer.launch({
+  const browser = await createBrowser();
+  const page = await browser.newPage();
+  await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36');
+  await openLogin(page);
+  await login(page, mailAddress, password);
+  await page.waitForNavigation();
+  await openSpendingSummaries(page, groupId);
+  await page.waitForTimeout(2000); // FIXME: グラフが表示されるのを待つ
+  const element = await page.$('#main-container');//summary-info-content
+  const imageBuffer = await element?.screenshot({ encoding: 'binary' });
+  await browser.close;
+  return imageBuffer;
+}
+
+async function createBrowser(): Promise<Browser> {
+  return await puppeteer.launch({
     headless: true,
     executablePath: 'google-chrome-stable',
     defaultViewport: {
@@ -64,17 +79,6 @@ async function SpendingSummariesImage(): Promise<Buffer | undefined> {
       '--single-process',
     ]
   });
-  const page = await browser.newPage();
-  await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36');
-  await openLogin(page);
-  await login(page, mailAddress, password);
-  await page.waitForNavigation();
-  await openSpendingSummaries(page, groupId);
-  await page.waitForTimeout(2000); // FIXME: グラフが表示されるのを待つ
-  const element = await page.$('#main-container');
-  const imageBuffer = await element?.screenshot({ encoding: 'binary' });
-  await browser.close;
-  return imageBuffer;
 }
 
 async function login(page: Page, mailAddress: string, password: string) {
