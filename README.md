@@ -47,7 +47,7 @@ MONEYFORWARD_GROUP_ID=xxxxxxxxx
 ```
 
 ```
-$ npm build
+$ npm run build
 $ docker-compose build
 $ docker-compose up
 
