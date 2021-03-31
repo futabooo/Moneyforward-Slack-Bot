@@ -30,7 +30,7 @@ slackApp.command('/moneyforward', async ({ command, ack, context }) => {
 
   // 3秒以上かかるのでSlackにエラーが表示されたあと画像が返ってくる
   try {
-    const image = await summariesImage();
+    const image = await SpendingSummariesImage();
     await slackApp.client.files.upload({
       token: context.botToken,
       channels: command.channel_id,
@@ -41,7 +41,7 @@ slackApp.command('/moneyforward', async ({ command, ack, context }) => {
   }
 });
 
-async function summariesImage(): Promise<Buffer | undefined> {
+async function SpendingSummariesImage(): Promise<Buffer | undefined> {
   const browser = await puppeteer.launch({
     headless: true,
     executablePath: 'google-chrome-stable',
