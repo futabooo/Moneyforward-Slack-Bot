@@ -10,7 +10,7 @@ const groupId = process.env.MONEYFORWARD_GROUP_ID ?? '0';
 const slackApp = new App({
   token: process.env.SLACK_BOT_TOKEN,
   signingSecret: process.env.SLACK_SIGNING_SECRET,
-  logLevel: LogLevel.DEBUG,
+  logLevel: process.env.ENVIRONMENT == 'production' ? LogLevel.ERROR : LogLevel.DEBUG,
   processBeforeResponse: true,
 });
 
