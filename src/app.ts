@@ -33,6 +33,7 @@ slackApp.command('/moneyforward', async ({ command, ack, say, context }) => {
 
   switch (mode) {
     case 'budget':
+      say(`予算のスクリーンショットを取得します`);
       try {
         // CloudRunのCold Startに当たると3秒以上かかるのでSlackにエラーが表示されたあと画像が返ってくる
         const image = await budgetCapture();
@@ -51,6 +52,7 @@ slackApp.command('/moneyforward', async ({ command, ack, say, context }) => {
       const yearMonth = commandInputs.length > 1 ? commandInputs[1] : '';
       const year = yearMonth.length > 0 ? yearMonth.substr(0, 4) : today.getFullYear().toString();
       const month = yearMonth.length > 0 ? yearMonth.substr(4, 2).replace('0', '') : (today.getMonth() + 1).toString();
+      say(`${year}年${month}月の収支内訳のスクリーンショットを取得します`);
       try {
         // CloudRunのCold Startに当たると3秒以上かかるのでSlackにエラーが表示されたあと画像が返ってくる
         const image = await actualCapture(year, month);
