@@ -1,8 +1,15 @@
 # Moneyforward-Slack-Bot
 
-MoneyForwardの予算タブのスクリーンショットを撮影してSlackに通知する
+MoneyForwardのスクリーンショットを撮影してSlackに通知する
+
+## `/moneyforward budget`
 
 <img width="640" src="https://user-images.githubusercontent.com/944185/105710364-5bfdff00-5f5a-11eb-8520-8d4d13b806ee.png">
+
+## `/moneyforward actual {YearMonth}`
+ex `/moneyforward actual 202101`
+
+<img width="640" src="https://user-images.githubusercontent.com/944185/113504990-f8eea100-9576-11eb-96b4-ab7143de3552.jpg">
 
 ## How to run this app
 
